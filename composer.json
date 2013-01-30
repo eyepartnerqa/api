@@ -9,6 +9,7 @@
     }
   ],
   "require": {
-    "tikilive/installers": "*"
+    "tikilive/installers": "*",
+    "tikilive/framework": "*"
   }
 }
