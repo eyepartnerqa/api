@@ -1,4 +1,4 @@
-api
-===
+TikiLIVE API
+============
 
-The TikiLIVE API application.
+A RESTful JSON API for TikiLIVE.
