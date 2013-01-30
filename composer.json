@@ -1,0 +1,14 @@
+{
+  "name": "tikilive/api",
+  "description": "A RESTful JSON API for TikiLIVE.",
+  "type": "tikilive-application",
+  "authors": [
+    {
+      "name": "TikiLIVE Eyepartner Team",
+      "email": "tikilive.team@eyepartner.com"
+    }
+  ],
+  "require": {
+    "tikilive/installers": "*"
+  }
+}
