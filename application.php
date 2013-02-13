@@ -66,7 +66,7 @@ return function() {
    * Routing
    */
 
-  $router = $this->get('router');
+  $router = $app->get('router');
 
   /**
    * Application is ready at this stage.
