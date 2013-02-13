@@ -42,13 +42,24 @@ return function() {
 
       $debug = $app->get('config')->get('application', 'debug', false);
       if ($debug) {
-        $response->setCustom('exception', array(
+        $exception = array(
           'type'    => get_class($e),
           'message' => $e->getMessage(),
           'file'    => $e->getFile(),
           'line'    => $e->getLine(),
           'trace'   => $e->getTrace()
-        ));
+        );
+        $previous = $e->getPrevious();
+        if ($previous) {
+          $exception['previous'] = array(
+            'type'    => get_class($previous),
+            'message' => $previous->getMessage(),
+            'file'    => $previous->getFile(),
+            'line'    => $previous->getLine(),
+            'trace'   => $previous->getTrace()
+          );
+        }
+        $response->setCustom('exception', $exception);
       }
 
       return $response;
