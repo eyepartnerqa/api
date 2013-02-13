@@ -1,5 +1,10 @@
 <?php
 
+// Setup Composer autoloader.
 require '../../vendor/autoload.php';
 
-echo 'Hello World';
+// Load the API application.
+$api = require 'application.php';
+
+// Run the application.
+$api()->handle()->send();
