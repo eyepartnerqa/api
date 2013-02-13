@@ -15,4 +15,8 @@ $config['request.http_port'] = 80;
 // The HTTPs port. This is used to generate absolute URLs.
 $config['request.https_port'] = 443;
 
+// The controller namespace prefix is used by the dispatcher
+// to generate the full class name of the controller.
+$config['controller.namespace_prefix'] = '\Tikilive\Api\Controller\\';
+
 return $config;
