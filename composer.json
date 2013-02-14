@@ -8,6 +8,11 @@
       "email": "tikilive.team@eyepartner.com"
     }
   ],
+  "autoload": {
+    "psr-0": {
+      "Tikilive\\Api": "lib/"
+    }
+  },
   "require": {
     "tikilive/installers": "*",
     "tikilive/framework": "*"
