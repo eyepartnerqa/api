@@ -79,6 +79,19 @@ return function() {
 
   $router = $app->get('router');
 
+  // Default resource.
+  $router->map('resource', '/:controller/:id')
+         ->setmethods(array('GET', 'PUT', 'DELETE'))
+         ->setRequirements(array(
+             'controller' => '[a-z0-9_-]+',
+             'id' => '[1-9]\d*'
+           ));
+
+  // Default collection.
+  $router->map('collection', '/:controller')
+         ->setMethods(array('POST', 'GET'))
+         ->setRequirement('controller', '[a-z0-9_-]+');
+
   /**
    * Application is ready at this stage.
    */
