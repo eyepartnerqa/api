@@ -30,7 +30,7 @@ class UsersController extends AbstractController
   /**
    * Returns all users.
    *
-   * @param array An array of users.
+   * @return array An array of users.
    */
   protected function getUsers()
   {
