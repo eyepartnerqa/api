@@ -29,10 +29,10 @@ $config['options'][\PDO::ATTR_DEFAULT_FETCH_MODE] = \PDO::FETCH_ASSOC;
 // Request a persistent connection, rather than creating a new connection.
 $config['options'][\PDO::ATTR_PERSISTENT] = true;
 
-// Do not emulate prepares in PDO driver (best used with MySQL >= 5.1.17).
-$config['options'][\PDO::ATTR_EMULATE_PREPARES] = false;
+// Always emulate prepares in PDO driver.
+$config['options'][\PDO::ATTR_EMULATE_PREPARES] = true;
 
-// Do not use the buffered versions of the MySQL API.
+// Always use the buffered versions of the MySQL API.
 $config['options'][\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
 
 return $config;
