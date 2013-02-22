@@ -1,19 +1,21 @@
 <?php
 
 use Tikilive\Application\Application;
+use Tikilive\Application\Container;
 use Tikilive\Http\JsonResponse;
 use Tikilive\Exception\Http\AbstractException as HttpException;
 
 return function() {
 
-  $app = new Application();
+  $container = new Container();
+  $app = new Application($container);
 
   /**
    * Services.
    */
 
   // Initialise the config service.
-  $app->set('config', $app->factory('config.factory', array(
+  $container->set('config', $container->factory('config.factory', array(
     __DIR__ . '/config/',
     __DIR__ . '/../../config',
     __DIR__ . '/../../config/api'
@@ -24,8 +26,8 @@ return function() {
    */
 
   // Custom exception handler.
-  $app->register('exception.handler', function($app) {
-    return function(\Exception $e) use ($app) {
+  $container->register('exception.handler', function(Container $container) {
+    return function(\Exception $e) use ($container) {
 
       if ($e instanceOf HttpException) {
         $statusCode  = $e->getCode();
@@ -40,7 +42,7 @@ return function() {
       $response = new JsonResponse(null, $statusCode, $headers);
       $response->setMessage($message);
 
-      $debug = $app->get('config')->get('application', 'debug', false);
+      $debug = $container->get('config')->get('application', 'debug', false);
       if ($debug) {
         $exception = array(
           'type'    => get_class($e),
@@ -67,7 +69,7 @@ return function() {
   });
 
   // Custom response handler.
-  $app->register('response.handler', function($app) {
+  $container->register('response.handler', function(Container $container) {
     return function($response) {
       return new JsonResponse($response);
     };
@@ -77,7 +79,7 @@ return function() {
    * Routing
    */
 
-  $router = $app->get('router');
+  $router = $container->get('router');
 
   // Default resource.
   $router->map('resource', '/:controller/:id')
