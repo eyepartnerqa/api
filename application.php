@@ -2,6 +2,7 @@
 
 use Tikilive\Application\Application;
 use Tikilive\Application\Container;
+use Tikilive\Application\Provider\JsonExceptionHandlerProvider;
 use Tikilive\Http\JsonResponse;
 use Tikilive\Exception\Http\AbstractException as HttpException;
 use Tikilive\Exception\Http\BadRequestException;
@@ -27,51 +28,7 @@ return function() {
    */
 
   // Custom exception handler.
-  $container->register('exception.handler', function(Container $container) {
-    return function(\Exception $e) use ($container) {
-
-      if ($e instanceOf HttpException) {
-        $statusCode  = $e->getCode();
-        $headers     = $e->getHeaders();
-        $message     = $e->getMessage();
-      } else {
-        $statusCode  = 500;
-        $headers     = array();
-        $message     = 'Internal Server Error';
-      }
-
-      $response = new JsonResponse(null, $statusCode, $headers);
-      $response->setReason($message);
-
-      if ($e instanceOf BadRequestException) {
-        $response->setCustom('errors', $e->getErrors());
-      }
-
-      $debug = $container->get('config')->get('application', 'debug', false);
-      if ($debug) {
-        $exception = array(
-          'type'    => get_class($e),
-          'message' => $e->getMessage(),
-          'file'    => $e->getFile(),
-          'line'    => $e->getLine(),
-          'trace'   => $e->getTrace()
-        );
-        $previous = $e->getPrevious();
-        if ($previous) {
-          $exception['previous'] = array(
-            'type'    => get_class($previous),
-            'message' => $previous->getMessage(),
-            'file'    => $previous->getFile(),
-            'line'    => $previous->getLine(),
-            'trace'   => $previous->getTrace()
-          );
-        }
-        $response->setCustom('exception', $exception);
-      }
-
-      return $response;
-    };
-  });
+  $container->registerProvider(new JsonExceptionHandlerProvider(), 'exception.handler');
 
   // Custom response handler.
   $container->register('response.handler', function(Container $container) {
