@@ -4,6 +4,12 @@ namespace Tikilive\Api\Controller;
 
 use Tikilive\Application\ParameterContainer;
 use Tikilive\Controller\AbstractController;
+use Tikilive\Exception\Http\BadRequestException;
+use Tikilive\Exception\Http\NotFoundException;
+use Tikilive\Exception\Validation\ValidationException;
+use Tikilive\Http\JsonResponse;
+use Tikilive\Model\Entity\UserEntity;
+use Tikilive\Model\Store\UserStore;
 
 /**
  * The API interface to User collection.
@@ -34,17 +40,40 @@ class UsersController extends AbstractController
    */
   protected function getUsers()
   {
-    $users[] = array(
-      'id'       => 100,
-      'username' => 'username1'
-    );
+    // Reqeust parameters.
+    $request = $this->get('request');
 
-    $users[] = array(
-      'id'       => 101,
-      'username' => 'username2'
-    );
+    $offset    = (int) $request->get('offset', 0);
+    $limit     = (int) $request->get('limit', 30);
+    $orderBy   = $request->get('order_by', 'username');
+    $direction = $request->get('direction', 'ASC');
 
-    return $users;
+    // Retrieve data from model.
+    $userStore = $this->getModel('UserStore');
+    try {
+      $users = $userStore->findAllActive($offset, $limit, $orderBy, $direction);
+    } catch(\InvalidArgumentException $e) {
+      throw new BadRequestException($e->getMessage());
+    }
+
+    // Format the response.
+    $response = array();
+    foreach($users as $user) {
+      $response[] = array(
+        'id'       => $user->getId(),
+        'username' => $user->getUsername()
+      );
+    }
+
+    // Add pager information.
+    $response = new JsonResponse($response);
+    $response->setCustom('pager', array(
+      'offset' => $offset,
+      'limit'  => $limit,
+      'total'  => $userStore->countAllActive()
+    ));
+
+    return $response;
   }
 
   /**
@@ -55,10 +84,24 @@ class UsersController extends AbstractController
    */
   protected function getUser($id)
   {
-    return array(
-      'id'       => $id,
-      'username' => 'username1'
+    $userStore = $this->getModel('UserStore');
+
+    $user = $userStore->findById($id);
+
+    if ($user === null) {
+      throw new NotFoundException('User does not exist.');
+    }
+
+    if ($user->getStatus() === 'disabled') {
+      throw new NotFoundException('User is no longer available.');
+    }
+
+    $response = array(
+      'id'       => $user->getId(),
+      'username' => $user->getUsername()
     );
+
+    return $response;
   }
 
   /**
@@ -70,15 +113,24 @@ class UsersController extends AbstractController
    */
   public function postMethod(ParameterContainer $params)
   {
-    $userId = rand(1000, 1100);
+    $request = $this->get('request');
+
+    $user = $this->getModel('UserEntity');
+    $user->setUsername($request->post('username'));
+    $user->setEmail($request->post('email'));
+    $user->setStatus($request->post('status', 'enabled'));
+
+    $userStore = $this->getModel('UserStore');
+    try {
+      $userId = $userStore->insert($user);
+    } catch(ValidationException $e) {
+      $new = new BadRequestException($e->getMessage());
+      $new->setErrors($e->getErrors());
+      throw $new;
+    }
 
     return array(
-      'id'   => $userId,
-      'link' => $this->urlFor(
-                  'resource',
-                  array('controller' => 'users', 'id' => $userId),
-                  true
-                )
+      'id' => $userId
     );
   }
 
@@ -91,7 +143,26 @@ class UsersController extends AbstractController
    */
   public function putMethod(ParameterContainer $params)
   {
-    return null;
+    $userStore = $this->getModel('UserStore');
+    $user = $userStore->findById($params->get('id'));
+
+    if ($user === null) {
+      throw new NotFoundException('User does not exist.');
+    }
+
+    $request = $this->get('request');
+
+    $user->setUsername($request->post('username', $user->getUsername()));
+    $user->setEmail($request->post('email', $user->getEmail()));
+    $user->setStatus($request->post('status', $user->getStatus()));
+
+    try {
+      $userId = $userStore->update($user);
+    } catch(ValidationException $e) {
+      $new = new BadRequestException($e->getMessage());
+      $new->setErrors($e->getErrors());
+      throw $new;
+    }
   }
 
   /**
@@ -103,6 +174,13 @@ class UsersController extends AbstractController
    */
   public function deleteMethod(ParameterContainer $params)
   {
-    return null;
+    $userStore = $this->getModel('UserStore');
+    $user = $userStore->findById($params->get('id'));
+
+    if ($user === null) {
+      throw new NotFoundException('User does not exist.');
+    }
+
+    $userStore->delete($user);
   }
 }
