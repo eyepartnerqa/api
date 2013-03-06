@@ -4,6 +4,7 @@ use Tikilive\Application\Application;
 use Tikilive\Application\Container;
 use Tikilive\Http\JsonResponse;
 use Tikilive\Exception\Http\AbstractException as HttpException;
+use Tikilive\Exception\Http\BadRequestException;
 
 return function() {
 
@@ -40,7 +41,11 @@ return function() {
       }
 
       $response = new JsonResponse(null, $statusCode, $headers);
-      $response->setMessage($message);
+      $response->setReason($message);
+
+      if ($e instanceOf BadRequestException) {
+        $response->setCustom('errors', $e->getErrors());
+      }
 
       $debug = $container->get('config')->get('application', 'debug', false);
       if ($debug) {
