@@ -8,6 +8,7 @@
       "email": "tikilive.team@eyepartner.com"
     }
   ],
+  "license": "proprietary",
   "autoload": {
     "psr-0": {
       "Tikilive\\Api": "lib/"
