@@ -8,8 +8,6 @@ use Tikilive\Exception\Http\BadRequestException;
 use Tikilive\Exception\Http\NotFoundException;
 use Tikilive\Exception\Validation\ValidationException;
 use Tikilive\Http\JsonResponse;
-use Tikilive\Model\Entity\UserEntity;
-use Tikilive\Model\Store\UserStore;
 
 /**
  * The API interface to User collection.
@@ -45,13 +43,13 @@ class UsersController extends AbstractController
 
     $offset    = (int) $request->get('offset', 0);
     $limit     = (int) $request->get('limit', 30);
-    $orderBy   = $request->get('order_by', 'username');
+    $orderBy   = $request->get('order_by', 'id');
     $direction = $request->get('direction', 'ASC');
 
     // Retrieve data from model.
-    $userStore = $this->getModel('UserStore');
+    $userModel = $this->getModel('UserModel');
     try {
-      $users = $userStore->findAllActive($offset, $limit, $orderBy, $direction);
+      $users = $userModel->findAllActive($offset, $limit, $orderBy, $direction);
     } catch(\InvalidArgumentException $e) {
       throw new BadRequestException($e->getMessage());
     }
@@ -70,7 +68,7 @@ class UsersController extends AbstractController
     $response->setCustom('pager', array(
       'offset' => $offset,
       'limit'  => $limit,
-      'total'  => $userStore->countAllActive()
+      'total'  => $userModel->countAllActive()
     ));
 
     return $response;
@@ -84,9 +82,9 @@ class UsersController extends AbstractController
    */
   protected function getUser($id)
   {
-    $userStore = $this->getModel('UserStore');
+    $userModel = $this->getModel('UserModel');
 
-    $user = $userStore->findById($id);
+    $user = $userModel->findById($id);
 
     if ($user === null) {
       throw new NotFoundException('User does not exist.');
@@ -96,10 +94,7 @@ class UsersController extends AbstractController
       throw new NotFoundException('User is no longer available.');
     }
 
-    $response = array(
-      'id'       => $user->getId(),
-      'username' => $user->getUsername()
-    );
+    $response = $user->toArray();
 
     return $response;
   }
@@ -120,13 +115,11 @@ class UsersController extends AbstractController
     $user->setEmail($request->post('email'));
     $user->setStatus($request->post('status', 'enabled'));
 
-    $userStore = $this->getModel('UserStore');
+    $userModel = $this->getModel('UserModel');
     try {
-      $userId = $userStore->insert($user);
+      $userId = $userModel->insert($user);
     } catch(ValidationException $e) {
-      $new = new BadRequestException($e->getMessage());
-      $new->setErrors($e->getErrors());
-      throw $new;
+      throw new BadRequestException($e->getMessage(), $e->getErrors(), $e);
     }
 
     return array(
@@ -143,8 +136,8 @@ class UsersController extends AbstractController
    */
   public function putMethod(ParameterContainer $params)
   {
-    $userStore = $this->getModel('UserStore');
-    $user = $userStore->findById($params->get('id'));
+    $userModel = $this->getModel('UserModel');
+    $user = $userModel->findById($params->get('id'));
 
     if ($user === null) {
       throw new NotFoundException('User does not exist.');
@@ -157,11 +150,9 @@ class UsersController extends AbstractController
     $user->setStatus($request->post('status', $user->getStatus()));
 
     try {
-      $userId = $userStore->update($user);
+      $userId = $userModel->update($user);
     } catch(ValidationException $e) {
-      $new = new BadRequestException($e->getMessage());
-      $new->setErrors($e->getErrors());
-      throw $new;
+      throw new BadRequestException($e->getMessage(), $e->getErrors(), $e);
     }
   }
 
@@ -174,13 +165,13 @@ class UsersController extends AbstractController
    */
   public function deleteMethod(ParameterContainer $params)
   {
-    $userStore = $this->getModel('UserStore');
-    $user = $userStore->findById($params->get('id'));
+    $userModel = $this->getModel('UserModel');
+    $user = $userModel->findById($params->get('id'));
 
     if ($user === null) {
       throw new NotFoundException('User does not exist.');
     }
 
-    $userStore->delete($user);
+    $userModel->delete($user->getId());
   }
 }

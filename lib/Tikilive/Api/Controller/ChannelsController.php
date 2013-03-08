@@ -8,8 +8,6 @@ use Tikilive\Exception\Http\BadRequestException;
 use Tikilive\Exception\Http\NotFoundException;
 use Tikilive\Exception\Validation\ValidationException;
 use Tikilive\Http\JsonResponse;
-use Tikilive\Model\Entity\ChannelEntity;
-use Tikilive\Model\Store\ChannelStore;
 
 /**
  * The API interface to Channel collection.
@@ -45,13 +43,13 @@ class ChannelsController extends AbstractController
 
     $offset    = (int) $request->get('offset', 0);
     $limit     = (int) $request->get('limit', 30);
-    $orderBy   = $request->get('order_by', 'name');
+    $orderBy   = $request->get('order_by', 'id');
     $direction = $request->get('direction', 'ASC');
 
     // Retrieve data from model.
-    $channelStore = $this->getModel('ChannelStore');
+    $channelModel = $this->getModel('ChannelModel');
     try {
-      $channels = $channelStore->findAllActive($offset, $limit, $orderBy, $direction);
+      $channels = $channelModel->findAllActive($offset, $limit, $orderBy, $direction);
     } catch(\InvalidArgumentException $e) {
       throw new BadRequestException($e->getMessage());
     }
@@ -76,7 +74,7 @@ class ChannelsController extends AbstractController
     $response->setCustom('pager', array(
       'offset' => $offset,
       'limit'  => $limit,
-      'total'  => $channelStore->countAllActive()
+      'total'  => $channelModel->countAllActive()
     ));
 
     return $response;
@@ -90,9 +88,9 @@ class ChannelsController extends AbstractController
    */
   protected function getChannel($id)
   {
-    $channelStore = $this->getModel('ChannelStore');
+    $channelModel = $this->getModel('ChannelModel');
 
-    $channel = $channelStore->findById($id);
+    $channel = $channelModel->findById($id);
 
     if ($channel === null) {
       throw new NotFoundException('Channel does not exist.');
@@ -104,10 +102,11 @@ class ChannelsController extends AbstractController
 
     $user = $channel->getUser();
     $response = array(
-      'id'   => $channel->getId(),
-      'name' => $channel->getName(),
-      'slug' => $channel->getSlug(),
+      'id'          => $channel->getId(),
+      'name'        => $channel->getName(),
+      'slug'        => $channel->getSlug(),
       'description' => $channel->getDescription(),
+      'created'     => $channel->getCreated(),
       'user' => array(
         'id'       => $user->getId(),
         'username' => $user->getUsername()
@@ -128,8 +127,8 @@ class ChannelsController extends AbstractController
   {
     $request = $this->get('request');
 
-    $userStore = $this->getModel('UserStore');
-    $user = $userStore->findById($request->post('user_id'));
+    $userModel = $this->getModel('UserModel');
+    $user = $userModel->findById($request->post('user_id'));
     if ($user === null) {
       throw new NotFoundException('User does not exist.');
     }
@@ -141,13 +140,11 @@ class ChannelsController extends AbstractController
     $channel->setPublished($request->post('published', 'published'));
     $channel->setUser($user);
 
-    $channelStore = $this->getModel('ChannelStore');
+    $channelModel = $this->getModel('ChannelModel');
     try {
-      $channelId = $channelStore->insert($channel);
+      $channelId = $channelModel->insert($channel);
     } catch(ValidationException $e) {
-      $new = new BadRequestException($e->getMessage());
-      $new->setErrors($e->getErrors());
-      throw $new;
+      throw new BadRequestException($e->getMessage(), $e->getErrors());
     }
 
     return array(
@@ -164,8 +161,8 @@ class ChannelsController extends AbstractController
    */
   public function putMethod(ParameterContainer $params)
   {
-    $channelStore = $this->getModel('ChannelStore');
-    $channel = $channelStore->findById($params->get('id'));
+    $channelModel = $this->getModel('ChannelModel');
+    $channel = $channelModel->findById($params->get('id'));
 
     if ($channel === null) {
       throw new NotFoundException('Channel does not exist.');
@@ -179,11 +176,9 @@ class ChannelsController extends AbstractController
     $channel->setPublished($request->post('published', $channel->getPublished()));
 
     try {
-      $channelId = $channelStore->update($channel);
+      $channelId = $channelModel->update($channel);
     } catch(ValidationException $e) {
-      $new = new BadRequestException($e->getMessage());
-      $new->setErrors($e->getErrors());
-      throw $new;
+      throw new BadRequestException($e->getMessage(), $e->getErrors());
     }
   }
 
@@ -196,13 +191,13 @@ class ChannelsController extends AbstractController
    */
   public function deleteMethod(ParameterContainer $params)
   {
-    $channelStore = $this->getModel('ChannelStore');
-    $channel = $channelStore->findById($params->get('id'));
+    $channelModel = $this->getModel('ChannelModel');
+    $channel = $channelModel->findById($params->get('id'));
 
     if ($channel === null) {
       throw new NotFoundException('Channel does not exist.');
     }
 
-    $channelStore->delete($channel);
+    $channelModel->delete($channel->getId());
   }
 }
