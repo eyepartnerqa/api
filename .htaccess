@@ -1,2 +1,2 @@
 RewriteEngine On
-RewriteRule !^(index.php)($|/) index.php [L,QSA]
+RewriteRule !^(index.php|docs|resources)($|/) index.php [L,QSA]
