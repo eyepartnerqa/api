@@ -1,7 +1,7 @@
 <?php
 
 // Setup Composer autoloader.
-require '../../vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
 // Load the API application.
 $api = require 'application.php';
